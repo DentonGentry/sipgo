@@ -402,6 +402,19 @@ func TestParseResponse(t *testing.T) {
 	assert.Equal(t, "", c.Address.User)
 }
 
+func TestParseResponseLineFolding(t *testing.T) {
+	data := []byte("SIP/2.0 401 Unauthorized\r\nCSeq: 1 REGISTER\r\nWWW-Authenticate: Digest realm=\"one.att.net\",\r\n  nonce=\"z7jQ=\",\r\n  opaque=\"ALU:QbGg__\",\r\n  algorithm=AKAv1-MD5,\r\n  qop=\"auth\"\r\nContent-Length: 0\r\n\r\n")
+
+	parser := NewParser()
+	msg, err := parser.ParseSIP(data)
+	require.Nil(t, err, err)
+	r := msg.(*Response)
+
+	// check that folded line is correctly parsed.
+	auth := r.GetHeaders("WWW-Authenticate")
+	assert.True(t, strings.Contains(auth[0].String(), "opaque"))
+}
+
 func TestRegisterRequestFail(t *testing.T) {
 	rawMsg := []string{
 		"REGISTER sip:10.5.0.10:5060;transport=udp SIP/2.0",
